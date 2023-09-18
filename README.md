@@ -80,7 +80,7 @@ celescope rna mkref \
  --fasta Homo_sapiens.GRCh38.dna.primary_assembly.fa \
  --gtf Homo_sapiens.GRCh38.99.filtered.gtf
 ```
-
+**WE WILL RUN ALL SCRIPTS IMSIDE THIS DIRECTORY
 ```{}
 mkdir /projects/SCGTEST_50
 ```
@@ -331,5 +331,73 @@ create_fastq_symlink_nh(gem_id, fastq_sub_df, fastq_dir)
 python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --metadata SCGTEST_50.csv --gem_id CNAG_61_1
 python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --metadata SCGTEST_50.csv --gem_id CNAG_61_2
 ```
+
+
+# Create a Mapfile
+Mapfile is a Required tab-delimited text file with at least three columns. Each line of mapfile represents paired-end fastq files.
+
+1st column: Fastq file prefix.
+2nd column: Fastq file directory path.
+3rd column: Sample name, which is the prefix of all output files.
+4th column: The 4th column has different meaning for each assay. For rna, it means forced cell number and it's an optional column. For other assays, see here.
+
+To generate this file we need to create a bash script:
+
+### The script
+```{}
+#!/bin/bash
+
+# Check if the correct number of arguments are provided
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <Prefix> <Directory> <Sample>"
+    exit 1
+fi
+
+prefix="$1"
+directory="$2"
+sample="$3"
+
+# Generate the output
+output="${prefix}       ${directory}    ${sample}"
+
+# Append the output to the mapfile.txt file
+echo -e "$output" >> mapfile.txt
+```
+This file take mainly three inputs: 1- Fastq file prefix 2- Fastq file directory path 3- Sample name
+### How to use
+```{}
+./4-generate_mapfile.sh CNAG_61_1 /home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq CNAG_61_1
+./4-generate_mapfile.sh CNAG_61_2 /home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_2/fastq CNAG_61_2
+```
+
+This should generate a file looks like:
+```{}
+CNAG_61_1	/home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq	CNAG_61_1
+CNAG_61_1	/home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq	CNAG_61_1
+```
+
+# Generate scripts for each sample
+
+Since we have a different samples, Celescope have a script to generate a script for each sample seperetly, we need to define where is the mapfile and where is refernce genome
+
+### The Script
+
+```{}
+#!/bin/bash
+multi_rna\
+        --mapfile ./mapfile.txt\
+        --genomeDir /home/groups/singlecell/mabdalfttah/CeleScope/hs_ensembl_99\
+        --thread 8\
+        --mod shell
+```
+
+# How To use
+
+```{}
+sh 5-run.sh
+```
+After you sh run.sh, a **shell** directory containing {sample}.sh files will be generated.
+
+Since this script should run directory but it doesn't assum you are going to run this in a cluster, we need generate a .cmd file to make this file run in the cluster 
 
 
