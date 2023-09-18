@@ -68,6 +68,7 @@ gunzip Homo_sapiens.GRCh38.99.gtf.gz
 ```
 
 ### Filter GTF File
+This step not working
 
 ```{}
 celescope utils mkgtf Homo_sapiens.GRCh38.99.gtf Homo_sapiens.GRCh38.99.filtered.gtf
@@ -79,3 +80,256 @@ celescope rna mkref \
  --fasta Homo_sapiens.GRCh38.dna.primary_assembly.fa \
  --gtf Homo_sapiens.GRCh38.99.filtered.gtf
 ```
+
+```{}
+mkdir /projects/SCGTEST_50
+```
+
+# Get LIMS info
+
+### The script 
+```
+#!/bin/bash
+
+# Get information for each library (flow cell, lane, sample id, etc.)
+# $1  needs to be the name of the project
+/home/groups/singlecell/mabdalfttah/projects/scripts/limsq.py -sp $1 | sed 's/;/                                                                                                                                                             \t/g' > "lims_info_"$1".txt"
+
+echo "Created LIMS information file: lims_info.txt"
+```
+### How to run
+
+```
+./1-lims.sh SCGTEST_50
+```
+Now we have lims_info_SCGTEST_50.txt with all of information of the samples and project
+
+since some fastq files/samples doesn't pass the filters we need to remove them from the lims_info_SCGTEST_50.txt file 
+
+```
+awk -F'\t' -v column="LanePassFail" 'BEGIN {OFS=FS} NR==1 {for (i=1; i<=NF; i++) if ($i == column) col=i} $col != "fail"' lims_info_SCGTEST_50.txt > tmp_file && mv tmp_file lims_info_SCGTEST_50.txt
+```
+
+We have filterd lims file, we are ready for the next step 
+
+# Get FASTQs Path
+
+### The script 
+
+```
+#!/usr/bin/env python
+
+# Writes fastq path by arranging proper flowcell, lane, index and read for a set of libraries
+
+# Load packages
+import numpy as np
+import pandas as pd
+import os
+import argparse
+
+
+# Define command-line arguments
+parser = argparse.ArgumentParser(description = "options to transfer feature-barcodes matrices from cluster to lcal")
+parser.add_argument("--subproject",
+                    dest = "subproject",
+                    action = "store",
+                    default = None,
+                    help = "Subproject we are working on (i.e. BCLLATLAS_10)")
+parser.add_argument("--info_file",
+                    dest = "info_file",
+                    action = "store",
+                    default = None,
+                    help = "Tab-delimited file with the information of Illumina sequence of libraries for that subproject")
+
+
+options = parser.parse_args()
+subproject = options.subproject
+info_file = options.info_file
+
+# Read file
+lims = pd.read_csv(info_file, sep = "\t", header = 0)
+
+# Assemble fastq paths combining flowcell, lane and index
+fastq_path = "/scratch/project/production/fastq"
+fastq_path_list_r1 = []
+fastq_path_list_r2 = []
+for idx in lims.index:
+    fc = lims.loc[idx, "flowcell"]
+    lane = lims.loc[idx, "lane"]
+    index = lims.loc[idx, "index"]
+    fastq_path_r1 = "{}/{}/{}/fastq/{}_{}_{}_1.fastq.gz".format(fastq_path, fc, lane, fc, lane, index)
+    fastq_path_r2 = "{}/{}/{}/fastq/{}_{}_{}_2.fastq.gz".format(fastq_path, fc, lane, fc, lane, index)
+    fastq_path_list_r1.append(fastq_path_r1)
+    fastq_path_list_r2.append(fastq_path_r2)
+library_id_l = list(lims["id"].append(lims["id"]))
+p_l = "P" * len(fastq_path_list_r1)
+indx_l = list(range(1, len(fastq_path_list_r1) + 1))
+pair_id = [p_l[x] + str(indx_l[x]) for x in range(len(indx_l))]
+fastq_path_list_r1.extend(fastq_path_list_r2)
+pair_id.extend(pair_id)
+fastq_path_l = fastq_path_list_r1
+read_l = (["R1"] * lims.shape[0]) + (["R2"] * lims.shape[0])
+fastq_dict = {"library_id":library_id_l, "fastq_path":fastq_path_l, "read":read_l, "pair_id":pair_id}
+fastq_df = pd.DataFrame(fastq_dict)
+
+fastq_df.to_csv("fastq_paths.tab".format(subproject), header = True, index = False, sep="\t")
+```
+### How to run 
+First we need to activate any conda env with python:
+```
+source ~/.bashrc
+conda activate sc_py
+```
+Run the script 
+```
+python 2-write_fastq_paths.py --subproject SCGTEST_49 --info_file lims_info_SCGTEST_49.txt
+```
+
+# 5- Create a Metadata File
+This step should be in R 
+
+```
+Path = "../Downloads/"
+library(tidyverse)
+#===============================================================================
+Files = list.files(paste0(Path), pattern = "lims_info_SCGTEST_49.txt")
+All_Files = list()
+metadata = list()
+for (i in seq_along(Files)) {
+  All_Files[[i]] = read.table(paste0(Path, Files[i]), sep = "\t", header = T)
+  metadata[[i]] = data.frame(subproject = All_Files[[i]]$subproject, gem_id = All_Files[[i]]$SampleName,
+                             library_id = All_Files[[i]]$id, library = All_Files[[i]]$library,
+                             type = "not_hashed",donor_id = All_Files[[i]]$SampleName, flowcell = All_Files[[i]]$flowcell,
+                             lane = All_Files[[i]]$lane, index = All_Files[[i]]$index)
+  metadata[[i]]$gem_id = str_replace_all(string = metadata[[i]]$gem_id, pattern = "\\.", replacement = "_")
+  
+}
+write.csv(metadata[[1]],paste0("../Downloads/SCGTEST_49.csv"), row.names = F)
+```
+Now we have SCGTEST_50.csv metadata file, let's go for the next step
+
+# 6- Create a jobs directories and copy FASTQs to them
+
+In this script we create a directory for each samples and copy the fASTQs files to this directory 
+
+### The script 
+```
+# This script initializes the filesystem of this project:
+# It creates a "jobs" folder which contains as many subdirectories as samples it has
+# For each sample directory, it creates the following files/folders:
+# 1. fastq: dir with the symlinks pointing to the fastq files
+# 2. log: dir which contains standard error and output of cellranger
+# 3. (sample_id).cmd: job script to compute the features-barcode matrix using cellranger
+
+
+# Import required packages
+import numpy as np
+import pandas as pd
+import os
+import argparse
+import subprocess
+import re
+import sys
+import config_vars as cfg
+from utils import *
+
+
+# Define command-line arguments
+parser = argparse.ArgumentParser(description = "options to initialize the filesystem and scripts of this project")
+parser.add_argument("--subproject",
+                    dest = "subproject",
+                    action = "store",
+                    default = None,
+                    help = "Subproject we are working on (i.e. BCLLATLAS_10)")
+parser.add_argument("--gem_id",
+                    dest = "gem_id",
+                    action = "store",
+                    default = None,
+                    help = "Gel Beads in Emulsion id")
+parser.add_argument("--verbose",
+                    dest = "verbose",
+                    action = "store_true",
+                    default = False,
+                    help = "Print log in standard error")
+parser.add_argument("--metadata",
+                    dest = "metadata",
+                    action = "store",
+                    default = None,
+                    help = "Metadata csv file for the tonsil atlas project")
+parser.add_argument("--fastq_paths",
+                    dest = "fastq_paths",
+                    action = "store",
+                    default = None,
+                    help = "File that contains the paths of the fastqs for the subproject libraries")
+
+
+def create_fastq_symlink_nh(gem_id, fastq_path_df, symlink_path):
+    """Creates a symbolic link pointing to a fastq file using cellranger notation
+
+    Args:
+      gem_id: identifier of the Gelbeads-in-Emulsion (GEM) well that will be used as prefix in the symlink
+      fastq_path_df: pandas dataframe with the fastq paths for that gem_id
+      symlink_path: string specifying where to create the symlinks
+
+    Returns:
+      None
+    """
+    pair_ids = np.unique(fastq_path_df["pair_id"])
+    for i in range(len(pair_ids)):
+        filt = (fastq_path_df["pair_id"] == pair_ids[i])
+        pair_df = fastq_path_df.loc[filt, :]
+        for j in pair_df.index:
+            fastq_path = pair_df.loc[j, "fastq_path"]
+            lane = str(i + 1)
+            read = pair_df.loc[j, "read"]
+            read = read.replace("R", "")
+            subprocess.run(["ln", "-s", fastq_path, "{}/{}_S1_L00{}_R{}_001.fastq.gz".format(symlink_path, gem_id, lane, read)])
+
+options = parser.parse_args()
+subproject = options.subproject
+gem_id = options.gem_id
+metadata_path = options.metadata
+fastq_paths = options.fastq_paths
+
+
+# Read data
+project_dir = "/home/groups/singlecell/mabdalfttah/projects/{}".format(subproject)
+fastq_path_df = pd.read_csv(fastq_paths, sep = "\t", header = 0)
+metadata_df = pd.read_csv(metadata_path, sep = ",", header = 0)
+if options.verbose:
+    sys.stderr.write("Files read successfully!\n")
+
+
+# For each sample, create directories and jobscript
+if not os.path.exists("{}/jobs".format(project_dir)):
+    os.mkdir("{}/jobs".format(project_dir))
+filt = (metadata_df["gem_id"] == gem_id)
+metadata_df = metadata_df.loc[filt]
+
+
+# Create directories
+subproject_dir = "{}/jobs/{}".format(project_dir, gem_id)
+fastq_dir = "{}/fastq".format(subproject_dir)
+log_dir = "{}/log".format(subproject_dir)
+for direct in [subproject_dir, fastq_dir, log_dir]:
+    if not os.path.exists(direct):
+        os.mkdir(direct)
+
+
+# Define variables and subset dataframes
+library_id = metadata_df.loc[filt, "library_id"]
+fastq_sub_df = fastq_path_df.loc[fastq_path_df["library_id"].isin(library_id), :]
+type = metadata_df["type"]
+type = type.values[0]
+
+# Create symmlinks to fastq files
+create_fastq_symlink_nh(gem_id, fastq_sub_df, fastq_dir)
+```
+
+### How to run
+```
+python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --metadata SCGTEST_50.csv --gem_id CNAG_61_1
+python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --metadata SCGTEST_50.csv --gem_id CNAG_61_2
+```
+
+
