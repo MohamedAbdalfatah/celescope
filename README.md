@@ -4,17 +4,19 @@ in this repository we are going to set up and analyze data usng celescope from c
 we are going to follow the instactions here https://github.com/singleron-RD/CeleScope/blob/master/doc/user_guide.md and we are going to analyze the subpeoject SCGTEST_50
 
 ## Installation
+
+### Clone the repository 
 ```{}
 git clone https://github.com/singleron-RD/CeleScope.git
 cd CeleScope
 ```
-## Create conda enviroment 
+### Create conda enviroment 
 ```{}
 source ~/.bashrc
 conda create -n celescope
 conda activate celescope
 ```
-## Install required packages
+### Install required packages
 Since we are now in CeleScope directory, we can find a file called conda_pkgs.txt
 ```{}
 cat conda_pkgs.txt
@@ -43,7 +45,7 @@ conda install -c bioconda snpeff
 # We shouldn't install -c conda-forge gcc, it is alredy installed in lunix, I instaled and removed it, becouse the conda version of gcc is dfferent then the gcc++ version 
 #conda install -c conda-forge gcc
 ```
-## Install celescope package using pip
+### Install celescope package using pip
 ```
 ~/anaconda3/envs/celescope/bin/pip install celescope
 ```
