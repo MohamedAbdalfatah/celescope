@@ -50,3 +50,32 @@ conda install -c bioconda snpeff
 ~/anaconda3/envs/celescope/bin/pip install celescope
 ```
 Now we have everything we need to analyze our data using celescope, since our data we are analyze is Single cell GEX we are going to follow the instructions from this toutorial https://github.com/singleron-RD/CeleScope/blob/master/doc/assay/multi_rna.md
+
+## Create A Refernce Genome 
+
+### Install the Refernce FASTA and GTF
+Since our data consists of human genetic information, we need to install the human reference genome in order to map our FASTQ reads accurately. Additionally, we will install the GTF file for the reference genome, which contains the coordinates of genes and chromosomes.
+Note: This step may take some minutes
+```{}
+mkdir hs_ensembl_99
+cd hs_ensembl_99
+
+wget ftp://ftp.ensembl.org/pub/release-99/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+wget ftp://ftp.ensembl.org/pub/release-99/gtf/homo_sapiens/Homo_sapiens.GRCh38.99.gtf.gz
+
+gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+gunzip Homo_sapiens.GRCh38.99.gtf.gz
+```
+
+### Filter GTF File
+
+```{}
+celescope utils mkgtf Homo_sapiens.GRCh38.99.gtf Homo_sapiens.GRCh38.99.filtered.gtf
+```
+### Create the Refernce Gemnome
+```{}
+celescope rna mkref \
+ --genome_name Homo_sapiens_ensembl_99_filtered \
+ --fasta Homo_sapiens.GRCh38.dna.primary_assembly.fa \
+ --gtf Homo_sapiens.GRCh38.99.filtered.gtf
+```
