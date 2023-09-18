@@ -1,4 +1,4 @@
-# celescope
+# Celescope
 
 in this repository we are going to set up and analyze data usng celescope from company 
 we are going to follow the instactions here https://github.com/singleron-RD/CeleScope/blob/master/doc/user_guide.md and we are going to analyze the subpeoject SCGTEST_50
