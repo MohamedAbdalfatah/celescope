@@ -460,3 +460,9 @@ chmod +x 6-add_slurm_info.sh
 ```
 You will find a two script called shell/CNAG_61_1.cmd shell/CNAG_61_2.cmd inside shell directory 
 
+```{}
+cd shell
+sbatch shell/CNAG_61_1.cmd
+sbatch shell/CNAG_61_2.cmd
+```
+
