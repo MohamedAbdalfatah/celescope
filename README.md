@@ -49,3 +49,4 @@ conda install -c bioconda snpeff
 ```
 ~/anaconda3/envs/celescope/bin/pip install celescope
 ```
+Now we have everything we need to analyze our data using celescope, since our data we are analyze is Single cell GEX we are going to follow the instructions from this toutorial https://github.com/singleron-RD/CeleScope/blob/master/doc/assay/multi_rna.md
