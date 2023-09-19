@@ -97,7 +97,7 @@ mkdir /projects/SCGTEST_50
 
 echo "Created LIMS information file: lims_info.txt"
 ```
-### How to run
+### How To Run
 
 ```
 ./1-lims.sh SCGTEST_50
@@ -174,7 +174,7 @@ fastq_df = pd.DataFrame(fastq_dict)
 
 fastq_df.to_csv("fastq_paths.tab".format(subproject), header = True, index = False, sep="\t")
 ```
-### How to run 
+### How To Run 
 First we need to activate any conda env with python:
 ```
 source ~/.bashrc
@@ -188,6 +188,7 @@ python 2-write_fastq_paths.py --subproject SCGTEST_49 --info_file lims_info_SCGT
 # 5- Create a Metadata File
 This step should be in R 
 
+### Script
 ```
 Path = "../Downloads/"
 library(tidyverse)
@@ -326,7 +327,7 @@ type = type.values[0]
 create_fastq_symlink_nh(gem_id, fastq_sub_df, fastq_dir)
 ```
 
-### How to run
+### How To Run
 ```
 python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --metadata SCGTEST_50.csv --gem_id CNAG_61_1
 python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --metadata SCGTEST_50.csv --gem_id CNAG_61_2
@@ -364,7 +365,8 @@ output="${prefix}       ${directory}    ${sample}"
 echo -e "$output" >> mapfile.txt
 ```
 This file take mainly three inputs: 1- Fastq file prefix 2- Fastq file directory path 3- Sample name
-### How to use
+
+### How To Run
 ```{}
 ./4-generate_mapfile.sh CNAG_61_1 /home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq CNAG_61_1
 ./4-generate_mapfile.sh CNAG_61_2 /home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_2/fastq CNAG_61_2
@@ -375,6 +377,8 @@ This should generate a file looks like:
 CNAG_61_1	/home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq	CNAG_61_1
 CNAG_61_1	/home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq	CNAG_61_1
 ```
+
+Which CNAG_61_1 is the prefex of FASTQs, /home/groups/singlecell/mabdalfttah/projects/SCGTEST_50/jobs/CNAG_61_1/fastq the path of FASTQs and CNAG_61_1 is the sample name
 
 # Generate scripts for each sample
 
@@ -391,7 +395,7 @@ multi_rna\
         --mod shell
 ```
 
-# How To use
+# How To Run
 
 ```{}
 sh 5-run.sh
@@ -460,6 +464,9 @@ chmod +x 6-add_slurm_info.sh
 ```
 You will find a two script called shell/CNAG_61_1.cmd shell/CNAG_61_2.cmd inside shell directory 
 
+# Submit a job script
+
+Finally, Submit a hob script to the cluster and wait your result 
 ```{}
 cd shell
 sbatch shell/CNAG_61_1.cmd
