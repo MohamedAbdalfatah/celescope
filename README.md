@@ -1,7 +1,7 @@
 # Celescope
 
-in this repository we are going to set up and analyze data usng celescope from company 
-we are going to follow the instactions here https://github.com/singleron-RD/CeleScope/blob/master/doc/user_guide.md and we are going to analyze the subpeoject SCGTEST_50
+in this repository we are going to set up and analyze data usng celescope from Singleron company 
+we are going to follow the instactions here https://github.com/singleron-RD/CeleScope/blob/master/doc/user_guide.md and we are going to analyze the SCGTEST_50 subpeoject 
 
 ## Installation
 
@@ -25,9 +25,9 @@ cat conda_pkgs.txt
 This file include conda packages we need to install, we should run:
 
 ```{}
-conda create -n celescope -y --file conda_pkgs.txt
+mamba create -n celescope -y --file conda_pkgs.txt
 ```
-using above command all packages there should be insralled but this is not working as excpected, so we can install all of them manually:
+Using above command all packages there should be insralled but this is not working as excpected, so we can install all of them manually:
 
 ```
 conda install -c bioconda star=2.6.1b
@@ -55,7 +55,7 @@ Now we have everything we need to analyze our data using celescope, since our da
 
 ### Install the Refernce FASTA and GTF
 Since our data consists of human genetic information, we need to install the human reference genome in order to map our FASTQ reads accurately. Additionally, we will install the GTF file for the reference genome, which contains the coordinates of genes and chromosomes.
-Note: This step may take some minutes
+**Note: This step may take some minutes**
 ```{}
 mkdir hs_ensembl_99
 cd hs_ensembl_99
@@ -211,7 +211,7 @@ Now we have SCGTEST_50.csv metadata file, let's go for the next step
 
 # 6- Create a jobs directories and copy FASTQs to them
 
-In this script we create a directory for each samples and copy the fASTQs files to this directory 
+In this script we create a directory for each samples and copy the FASTQs files to this directory 
 
 ### The script 
 ```
@@ -335,7 +335,7 @@ python 3-copy_fastqs  --subproject SCGTEST_50 --fastq_paths fastq_paths.tab --me
 
 
 # Create a Mapfile
-Mapfile is a Required tab-delimited text file with at least three columns. Each line of mapfile represents paired-end fastq files.
+Mapfile is a Required tab-delimited text file to run celescope with at least three columns. Each line of mapfile represents paired-end fastq files.
 
 1st column: Fastq file prefix.
 2nd column: Fastq file directory path.
@@ -392,7 +392,8 @@ multi_rna\
         --mapfile ./mapfile.txt\
         --genomeDir /home/groups/singlecell/mabdalfttah/CeleScope/hs_ensembl_99\
         --thread 8\
-        --mod shell
+        --mod sjm\
+        --expected_cell_num 5000
 ```
 
 # How To Run
