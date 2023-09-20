@@ -469,7 +469,8 @@ You will find a two script called shell/CNAG_61_1.cmd shell/CNAG_61_2.cmd inside
 
 Finally, Submit a hob script to the cluster and wait your result 
 ```{}
-sbatch shell/CNAG_61_1.cmd
-sbatch shell/CNAG_61_2.cmd
+cd shell 
+sbatch CNAG_61_1.cmd
+sbatch CNAG_61_2.cmd
 ```
 
