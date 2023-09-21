@@ -211,7 +211,7 @@ Now we have SCGTEST_50.csv metadata file, let's go for the next step
 
 # Create a jobs directories and copy FASTQs to them
 
-In this script we create a directory for each samples and copy the FASTQs files to this directory, we changed *"subprocess.run(["ln", "-s", fastq_path, "{}/{}_S1_L00{}_R{}_001.fastq.gz".format(symlink_path, gem_id, lane, read)])"* to be this *"subprocess.run(["ln", "-s", fastq_path, "{}/{}_S1_L00{}_{}.fastq.gz".format(symlink_path, gem_id, lane, read)])*. Ths gnerate FASTQs like this *"CNAG_61_1_S1_L002_2.fastq.gz"* instead of this *"CNAG_61_1_S1_L002_R2_001.fastq.gz"*
+In this script we create a directory for each samples and copy the FASTQs files to this directory, we changed **"subprocess.run(["ln", "-s", fastq_path, "{}/{}_S1_L00{}_R{}_001.fastq.gz".format(symlink_path, gem_id, lane, read)])"** to be this **"subprocess.run(["ln", "-s", fastq_path, "{}/{}_S1_L00{}_{}.fastq.gz".format(symlink_path, gem_id, lane, read)])**. Ths gnerate FASTQs like this **"CNAG_61_1_S1_L002_2.fastq.gz"** instead of this **"CNAG_61_1_S1_L002_R2_001.fastq.gz"**
 
 ### The script 
 ```
@@ -437,7 +437,7 @@ fi
 # Define the content to be added to the input file
 content_to_add=$(cat <<EOF
 #!/bin/bash
-#SBATCH --job-name=CNAG_81_GEX1
+#SBATCH --job-name="$1"
 #SBATCH --mail-type=all
 #SBATCH --mail-user=mohamed.abdalfttah@cnag.crg.eu
 #SBATCH --output=%x.slurm.%J.out
